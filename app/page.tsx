@@ -5,7 +5,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Users,
   FileText,
@@ -17,31 +16,29 @@ import {
   Phone,
   Mail,
   MapPin,
-  Clock,
   CheckCircle,
   XCircle,
   Activity,
-  Megaphone,
   Star,
   ArrowRight,
   Menu,
   X,
+  Crown,
+  Award,
+  UserCheck,
 } from "lucide-react"
 import { useAuth } from "@/components/unified-auth-provider"
+import { EmergencyAlertBanner } from "@/components/emergency-alert-banner"
+import { LiveStatsDashboard } from "@/components/live-stats-dashboard"
+import { NewsFeed } from "@/components/news-feed"
+import { EnhancedFooter } from "@/components/enhanced-footer"
 import databaseService from "@/lib/database-service"
-import type { DatabaseStats, Announcement } from "@/lib/database-service"
+import officialsService, { type Official } from "@/lib/officials-service"
 
 export default function HomePage() {
   const { user } = useAuth()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [stats, setStats] = useState<DatabaseStats>({
-    totalUsers: 1247,
-    totalDocuments: 3456,
-    totalAppointments: 234,
-    totalIncidents: 89,
-    activeUsers: 156,
-  })
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [officials, setOfficials] = useState<Official[]>([])
   const [systemStatus, setSystemStatus] = useState<"online" | "offline" | "maintenance">("online")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -53,13 +50,9 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load stats
-        const { data: statsData } = await databaseService.getStats()
-        if (statsData) setStats(statsData)
-
-        // Load announcements
-        const { data: announcementsData } = await databaseService.getAnnouncements(4)
-        if (announcementsData) setAnnouncements(announcementsData)
+        // Load officials
+        const { data: officialsData } = await officialsService.getAllOfficials()
+        if (officialsData) setOfficials(officialsData)
 
         // Check system health
         const { healthy } = await databaseService.healthCheck()
@@ -67,6 +60,22 @@ export default function HomePage() {
       } catch (error) {
         console.error("Error loading data:", error)
         setSystemStatus("offline")
+        // Load fallback officials data
+        setOfficials([
+          {
+            id: "1",
+            name: "Hon. Maria Santos",
+            position: "Barangay Captain",
+            description: "Leading our community with integrity and dedication to public service.",
+            contact_email: "captain@barangaybucana.gov.ph",
+            contact_phone: "(082) 123-4567",
+            achievements: ["Community Development Award 2023", "Excellence in Governance"],
+            image_url: "/placeholder.svg?height=120&width=120",
+            active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
       }
     }
 
@@ -174,23 +183,11 @@ export default function HomePage() {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "critical":
-        return "bg-red-100 text-red-800 border-red-200"
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-200"
-      case "medium":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "low":
-        return "bg-gray-100 text-gray-800 border-gray-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Emergency Alert Banner */}
+      <EmergencyAlertBanner />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -234,7 +231,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <Link href="/login">
+                  <Link href="/auth/login">
                     <Button variant="outline" size="sm">
                       Sign In
                     </Button>
@@ -291,7 +288,7 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div className="space-y-2 px-3">
-                      <Link href="/login" className="block">
+                      <Link href="/auth/login" className="block">
                         <Button variant="outline" size="sm" className="w-full bg-transparent">
                           Sign In
                         </Button>
@@ -346,57 +343,107 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Live System Statistics</h2>
             <p className="text-lg text-gray-600">Real-time data from our integrated management system</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Registered residents</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Documents</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalDocuments.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Processed this year</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Appointments</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalAppointments.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Scheduled this month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Incidents</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalIncidents}</div>
-                <p className="text-xs text-muted-foreground">Reported this month</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeUsers}</div>
-                <p className="text-xs text-muted-foreground">Online now</p>
-              </CardContent>
-            </Card>
+          <LiveStatsDashboard />
+        </div>
+      </section>
+
+      {/* Barangay Officials Section - Now Dynamic */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
+              <Crown className="h-8 w-8 text-yellow-400" />
+              Meet Your Barangay Officials
+            </h2>
+            <p className="text-xl text-blue-100">
+              Dedicated leaders serving the community with integrity and excellence
+            </p>
+          </div>
+
+          {/* Barangay Captain - Featured */}
+          {officials
+            .filter((o) => o.position.includes("Captain"))
+            .map((captain) => (
+              <div key={captain.id} className="mb-12">
+                <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+                  <CardContent className="p-8">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                      <div className="relative">
+                        <img
+                          src={captain.image_url || "/placeholder.svg?height=120&width=120"}
+                          alt={captain.name}
+                          className="w-32 h-32 rounded-full border-4 border-yellow-400 shadow-lg"
+                        />
+                        <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-blue-900 p-2 rounded-full">
+                          <Crown className="h-6 w-6" />
+                        </div>
+                      </div>
+                      <div className="flex-1 text-center md:text-left">
+                        <h3 className="text-2xl font-bold mb-2">{captain.name}</h3>
+                        <Badge className="bg-yellow-400 text-blue-900 mb-4 text-sm">{captain.position}</Badge>
+                        <p className="text-blue-100 mb-4 text-lg">{captain.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-4 justify-center md:justify-start">
+                          {captain.achievements?.map((achievement, index) => (
+                            <Badge key={index} variant="outline" className="border-white/30 text-white">
+                              <Award className="h-3 w-3 mr-1" />
+                              {achievement}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 justify-center md:justify-start">
+                          <Mail className="h-4 w-4" />
+                          <span className="text-blue-100">{captain.contact_email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+
+          {/* Other Officials Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {officials
+              .filter((o) => !o.position.includes("Captain"))
+              .map((official, index) => (
+                <Card
+                  key={official.id}
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300"
+                >
+                  <CardContent className="p-6 text-center">
+                    <img
+                      src={official.image_url || "/placeholder.svg?height=80&width=80"}
+                      alt={official.name}
+                      className="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-white/30"
+                    />
+                    <h4 className="font-bold text-lg mb-2">{official.name}</h4>
+                    <Badge className="bg-blue-500/50 text-white mb-3 text-xs">{official.position}</Badge>
+                    <p className="text-blue-100 text-sm mb-4">{official.description}</p>
+                    <div className="space-y-2">
+                      {official.achievements?.map((achievement, achIndex) => (
+                        <Badge key={achIndex} variant="outline" className="border-white/30 text-white text-xs block">
+                          <Award className="h-3 w-3 mr-1" />
+                          {achievement}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mt-4 text-sm">
+                      <Mail className="h-3 w-3" />
+                      <span className="text-blue-100">{official.contact_email}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          {/* Contact All Officials */}
+          <div className="text-center mt-12">
+            <Link href="/Bofficial">
+              <Button size="lg" className="bg-yellow-400 text-blue-900 hover:bg-yellow-300">
+                <UserCheck className="mr-2 h-5 w-5" />
+                Official Portal Access
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -454,46 +501,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Announcements */}
+      {/* News & Announcements */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Latest Announcements</h2>
-            <p className="text-lg text-gray-600">Stay updated with the latest news and updates from your barangay</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {announcements.length > 0 ? (
-              announcements.map((announcement) => (
-                <Alert key={announcement.id} className="p-6">
-                  <Megaphone className="h-5 w-5" />
-                  <div className="ml-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold">{announcement.title}</h3>
-                      <Badge className={getPriorityColor(announcement.priority)}>{announcement.priority}</Badge>
-                    </div>
-                    <AlertDescription className="text-gray-600 mb-3">{announcement.content}</AlertDescription>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>By {announcement.author_name || "System"}</span>
-                      <span>{new Date(announcement.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </Alert>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-8">
-                <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No announcements at this time</p>
-              </div>
-            )}
-          </div>
-          <div className="text-center mt-8">
-            <Link href="/portal/bulletin">
-              <Button variant="outline">
-                View All Announcements
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <NewsFeed limit={6} />
         </div>
       </section>
 
@@ -678,99 +689,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">IBMS 3.5.2</h3>
-              <p className="text-gray-400 mb-4">
-                Integrated Barangay Management System - Modernizing local governance for better community service.
-              </p>
-              <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus)}`}>
-                {getStatusIcon(systemStatus)}
-                <span className="text-sm">System Status: {systemStatus}</span>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/portal" className="text-gray-400 hover:text-white">
-                    Resident Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/documents" className="text-gray-400 hover:text-white">
-                    Document Services
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/health-portal" className="text-gray-400 hover:text-white">
-                    Health Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/emergency" className="text-gray-400 hover:text-white">
-                    Emergency Services
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Services</h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/admin/business" className="text-gray-400 hover:text-white">
-                    Business Permits
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/portal/bulletin" className="text-gray-400 hover:text-white">
-                    Community Events
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/portal/incidents" className="text-gray-400 hover:text-white">
-                    Report Incidents
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/portal/chat" className="text-gray-400 hover:text-white">
-                    Live Support
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4" />
-                  <span>(082) 123-4567</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4" />
-                  <span>info@barangaybucana.gov.ph</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>Barangay Hall, Bucana</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4" />
-                  <span>{currentTime.toLocaleString()}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400">
-              © 2024 Barangay Bucana. All rights reserved. | IBMS v3.5.2 | Powered by modern web technologies
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* Enhanced Footer */}
+      <EnhancedFooter />
     </div>
   )
 }

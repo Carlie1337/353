@@ -1,123 +1,154 @@
 import { supabase } from "./supabase-client"
+import type { User } from "@supabase/supabase-js"
 
-export interface AuthUser {
+export interface UserProfile {
   id: string
   email: string
   name: string
-  role: string
+  role: "resident" | "health_worker" | "tanod" | "barangay_official" | "admin" | "superadmin"
   department?: string
-  avatar?: string
-  permissions?: string[]
+  avatar_url?: string
+  phone?: string
+  address?: string
+  created_at: string
+  updated_at: string
 }
 
-export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-  return { data, error }
+export interface AuthResponse {
+  user: User | null
+  profile: UserProfile | null
+  error: string | null
 }
 
-export async function signUp(email: string, password: string, userData: Partial<AuthUser>) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name: userData.name || "User",
-      },
-    },
-  })
-
-  if (data.user && !error) {
-    // Create user profile
-    await supabase.from("users").insert({
-      id: data.user.id,
-      email: data.user.email || "",
-      name: userData.name || "User",
-      role: userData.role || "user",
-      department: userData.department || null,
-      avatar_url: userData.avatar || null,
-      permissions: ["read"],
+export async function signIn(email: string, password: string): Promise<{ data: any; error: any }> {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
-  }
 
-  return { data, error }
+    if (error) {
+      return { data: null, error }
+    }
+
+    return { data, error: null }
+  } catch (error) {
+    return { data: null, error: { message: "An unexpected error occurred" } }
+  }
 }
 
-export async function signOut() {
+export async function signUp(
+  email: string,
+  password: string,
+  userData: Partial<UserProfile>,
+): Promise<{ data: any; error: any }> {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: userData.name,
+          role: userData.role || "resident",
+        },
+      },
+    })
+
+    if (error) {
+      return { data: null, error }
+    }
+
+    // Create user profile
+    if (data.user) {
+      const { error: profileError } = await supabase.from("users").insert({
+        id: data.user.id,
+        email: data.user.email!,
+        name: userData.name!,
+        role: userData.role || "resident",
+        department: userData.department,
+        phone: userData.phone,
+        address: userData.address,
+      })
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError)
+      }
+    }
+
+    return { data, error: null }
+  } catch (error) {
+    return { data: null, error: { message: "An unexpected error occurred" } }
+  }
+}
+
+export async function signOut(): Promise<{ error: any }> {
   const { error } = await supabase.auth.signOut()
   return { error }
 }
 
-export async function getCurrentUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+export async function getCurrentUser(): Promise<AuthResponse> {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-  if (error || !user) {
-    return { user: null, error }
-  }
-
-  // Get user profile
-  const { data: profile, error: profileError } = await supabase.from("users").select("*").eq("id", user.id).single()
-
-  if (profileError) {
-    return {
-      user: {
-        id: user.id,
-        email: user.email || "",
-        name: user.user_metadata?.name || "User",
-        role: "user",
-        permissions: ["read"],
-      },
-      error: null,
+    if (authError || !user) {
+      return { user: null, profile: null, error: authError?.message || "No user found" }
     }
-  }
 
-  return {
-    user: {
-      id: user.id,
-      email: user.email || "",
-      name: profile.name || "User",
-      role: profile.role || "user",
-      department: profile.department || undefined,
-      avatar: profile.avatar_url || undefined,
-      permissions: profile.permissions || ["read"],
-    },
-    error: null,
-  }
-}
+    const { data: profile, error: profileError } = await supabase.from("users").select("*").eq("id", user.id).single()
 
-export async function adminSignIn(email: string, password: string) {
-  const { data, error } = await signIn(email, password)
-
-  if (error || !data.user) {
-    return { data: null, error }
-  }
-
-  // Check if user has admin role
-  const { data: profile } = await supabase.from("users").select("role").eq("id", data.user.id).single()
-
-  if (profile?.role !== "admin" && profile?.role !== "superadmin") {
-    await signOut()
-    return {
-      data: null,
-      error: { message: "Insufficient permissions" },
+    if (profileError) {
+      return { user, profile: null, error: profileError.message }
     }
+
+    return { user, profile, error: null }
+  } catch (error) {
+    return { user: null, profile: null, error: "Failed to get current user" }
   }
-
-  return { data, error }
 }
 
-export async function updateUserProfile(userId: string, updates: Partial<AuthUser>) {
-  const { data, error } = await supabase.from("users").update(updates).eq("id", userId).select().single()
+export async function updateProfile(userId: string, updates: Partial<UserProfile>): Promise<{ data: any; error: any }> {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+      .select()
+      .single()
 
-  return { data, error }
+    return { data, error }
+  } catch (error) {
+    return { data: null, error: { message: "Failed to update profile" } }
+  }
 }
 
-export async function resetPassword(email: string) {
-  const { data, error } = await supabase.auth.resetPasswordForEmail(email)
-  return { data, error }
+export async function resetPassword(email: string): Promise<{ error: any }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/reset-password`,
+  })
+  return { error }
+}
+
+export function getRedirectPath(role: string): string {
+  switch (role) {
+    case "resident":
+      return "/portal"
+    case "health_worker":
+      return "/health-portal"
+    case "tanod":
+      return "/tanod"
+    case "barangay_official":
+      return "/bms"
+    case "admin":
+      return "/admin"
+    case "superadmin":
+      return "/heartclif"
+    default:
+      return "/portal"
+  }
 }
