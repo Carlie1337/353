@@ -1,154 +1,249 @@
-import { supabase } from "./supabase-client"
-import type { User } from "@supabase/supabase-js"
+import { supabase } from './supabase-client'
 
-export interface UserProfile {
+export interface User {
   id: string
   email: string
   name: string
-  role: "resident" | "health_worker" | "tanod" | "barangay_official" | "admin" | "superadmin"
-  department?: string
-  avatar_url?: string
-  phone?: string
-  address?: string
-  created_at: string
-  updated_at: string
+  role: string
 }
 
-export interface AuthResponse {
-  user: User | null
-  profile: UserProfile | null
-  error: string | null
+export interface LoginCredentials {
+  email: string
+  password: string
 }
 
-export async function signIn(email: string, password: string): Promise<{ data: any; error: any }> {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+export interface RegisterData {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  contactNumber: string
+}
 
-    if (error) {
-      return { data: null, error }
-    }
-
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: { message: "An unexpected error occurred" } }
+// Demo accounts for testing
+const DEMO_ACCOUNTS = {
+  'demo@resident.com': {
+    id: 'demo-resident-001',
+    email: 'demo@resident.com',
+    name: 'Demo Resident',
+    role: 'resident',
+    password: 'demo123'
+  },
+  'demo@admin.com': {
+    id: 'demo-admin-001', 
+    email: 'demo@admin.com',
+    name: 'Demo Admin',
+    role: 'admin',
+    password: 'admin123'
+  },
+  'demo@health.com': {
+    id: 'demo-health-001',
+    email: 'demo@health.com', 
+    name: 'Demo Health Worker',
+    role: 'health_worker',
+    password: 'health123'
+  },
+  'demo@tanod.com': {
+    id: 'demo-tanod-001',
+    email: 'demo@tanod.com',
+    name: 'Demo Tanod',
+    role: 'tanod', 
+    password: 'tanod123'
+  },
+  'demo@official.com': {
+    id: 'demo-official-001',
+    email: 'demo@official.com',
+    name: 'Demo Official',
+    role: 'barangay_official',
+    password: 'official123'
+  },
+  'demo@superadmin.com': {
+    id: 'demo-superadmin-001',
+    email: 'demo@superadmin.com',
+    name: 'Demo Super Admin', 
+    role: 'superadmin',
+    password: 'superadmin123'
   }
 }
 
-export async function signUp(
-  email: string,
-  password: string,
-  userData: Partial<UserProfile>,
-): Promise<{ data: any; error: any }> {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: userData.name,
-          role: userData.role || "resident",
-        },
-      },
-    })
-
-    if (error) {
-      return { data: null, error }
-    }
-
-    // Create user profile
-    if (data.user) {
-      const { error: profileError } = await supabase.from("users").insert({
-        id: data.user.id,
-        email: data.user.email!,
-        name: userData.name!,
-        role: userData.role || "resident",
-        department: userData.department,
-        phone: userData.phone,
-        address: userData.address,
-      })
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError)
+export const authService = {
+  async login(credentials: LoginCredentials): Promise<{ user: User | null; error: string | null }> {
+    try {
+      // Check for demo accounts first
+      const demoAccount = DEMO_ACCOUNTS[credentials.email as keyof typeof DEMO_ACCOUNTS]
+      if (demoAccount && demoAccount.password === credentials.password) {
+        // Store demo session in localStorage
+        localStorage.setItem('demo_user', JSON.stringify({
+          id: demoAccount.id,
+          email: demoAccount.email,
+          name: demoAccount.name,
+          role: demoAccount.role
+        }))
+        
+        return {
+          user: {
+            id: demoAccount.id,
+            email: demoAccount.email,
+            name: demoAccount.name,
+            role: demoAccount.role
+          },
+          error: null
+        }
       }
-    }
 
-    return { data, error: null }
-  } catch (error) {
-    return { data: null, error: { message: "An unexpected error occurred" } }
-  }
-}
-
-export async function signOut(): Promise<{ error: any }> {
-  const { error } = await supabase.auth.signOut()
-  return { error }
-}
-
-export async function getCurrentUser(): Promise<AuthResponse> {
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return { user: null, profile: null, error: authError?.message || "No user found" }
-    }
-
-    const { data: profile, error: profileError } = await supabase.from("users").select("*").eq("id", user.id).single()
-
-    if (profileError) {
-      return { user, profile: null, error: profileError.message }
-    }
-
-    return { user, profile, error: null }
-  } catch (error) {
-    return { user: null, profile: null, error: "Failed to get current user" }
-  }
-}
-
-export async function updateProfile(userId: string, updates: Partial<UserProfile>): Promise<{ data: any; error: any }> {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
+      // Try real authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
       })
-      .eq("id", userId)
-      .select()
-      .single()
 
-    return { data, error }
-  } catch (error) {
-    return { data: null, error: { message: "Failed to update profile" } }
-  }
-}
+      if (error) {
+        return { user: null, error: error.message }
+      }
 
-export async function resetPassword(email: string): Promise<{ error: any }> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
-  })
-  return { error }
-}
+      if (!data.user) {
+        return { user: null, error: 'Login failed' }
+      }
 
-export function getRedirectPath(role: string): string {
-  switch (role) {
-    case "resident":
-      return "/portal"
-    case "health_worker":
-      return "/health-portal"
-    case "tanod":
-      return "/tanod"
-    case "barangay_official":
-      return "/bms"
-    case "admin":
-      return "/admin"
-    case "superadmin":
-      return "/heartclif"
-    default:
-      return "/portal"
+      // Get user role and resident info
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single()
+
+      const { data: residentData } = await supabase
+        .from('residents')
+        .select('first_name, last_name')
+        .eq('user_id', data.user.id)
+        .single()
+
+      const userName = residentData 
+        ? `${residentData.first_name} ${residentData.last_name}`
+        : data.user.email?.split('@')[0] || 'User'
+
+      return {
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          name: userName,
+          role: roleData?.role || 'resident'
+        },
+        error: null
+      }
+    } catch (error: any) {
+      return { user: null, error: error.message || 'An unexpected error occurred' }
+    }
+  },
+
+  async logout(): Promise<{ error: string | null }> {
+    try {
+      // Clear demo session
+      localStorage.removeItem('demo_user')
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut()
+      return { error: error?.message || null }
+    } catch (error: any) {
+      return { error: error.message || 'Logout failed' }
+    }
+  },
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      // Check for demo user first
+      const demoUser = localStorage.getItem('demo_user')
+      if (demoUser) {
+        return JSON.parse(demoUser)
+      }
+
+      // Check Supabase session
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) return null
+
+      // Get user role and resident info
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      const { data: residentData } = await supabase
+        .from('residents')
+        .select('first_name, last_name')
+        .eq('user_id', user.id)
+        .single()
+
+      const userName = residentData 
+        ? `${residentData.first_name} ${residentData.last_name}`
+        : user.email?.split('@')[0] || 'User'
+
+      return {
+        id: user.id,
+        email: user.email!,
+        name: userName,
+        role: roleData?.role || 'resident'
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error)
+      return null
+    }
+  },
+
+  async register(data: RegisterData): Promise<{ user: User | null; error: string | null }> {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      })
+
+      if (authError) {
+        return { user: null, error: authError.message }
+      }
+
+      if (!authData.user) {
+        return { user: null, error: 'Registration failed' }
+      }
+
+      // Create resident record
+      const { error: residentError } = await supabase
+        .from('residents')
+        .insert({
+          user_id: authData.user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email,
+          contact_number: data.contactNumber,
+        })
+
+      if (residentError) {
+        return { user: null, error: 'Failed to create resident profile' }
+      }
+
+      // Assign resident role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: 'resident',
+        })
+
+      if (roleError) {
+        return { user: null, error: 'Failed to assign user role' }
+      }
+
+      return {
+        user: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          name: `${data.firstName} ${data.lastName}`,
+          role: 'resident'
+        },
+        error: null
+      }
+    } catch (error: any) {
+      return { user: null, error: error.message || 'Registration failed' }
+    }
   }
 }
