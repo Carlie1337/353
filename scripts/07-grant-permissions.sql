@@ -1,28 +1,29 @@
--- Grant necessary permissions to authenticated and anonymous users
-GRANT USAGE ON SCHEMA public TO anon, authenticated;
+-- Grant necessary permissions
 
--- Grant permissions on all tables
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+-- Grant usage on schemas
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT USAGE ON SCHEMA public TO service_role;
+
+-- Grant permissions on tables to authenticated users
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT SELECT ON public.announcements TO anon;
+GRANT SELECT ON public.events TO anon;
+GRANT SELECT ON public.documents TO anon;
 
 -- Grant permissions on sequences
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- Grant execute permissions on functions
-GRANT EXECUTE ON FUNCTION handle_updated_at() TO authenticated;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+GRANT SELECT ON ALL FUNCTIONS IN SCHEMA public TO anon;
 
--- Specific permissions for public tables
-GRANT SELECT ON barangay_officials TO anon;
-GRANT SELECT ON announcements TO anon;
-GRANT SELECT ON emergency_alerts TO anon;
+-- Ensure future tables have proper permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
 
--- Revoke unnecessary permissions from anon for sensitive tables
-REVOKE ALL ON users FROM anon;
-REVOKE ALL ON user_roles FROM anon;
-REVOKE ALL ON residents FROM anon;
-REVOKE ALL ON households FROM anon;
-REVOKE ALL ON incidents FROM anon;
-REVOKE ALL ON appointments FROM anon;
-REVOKE ALL ON document_requests FROM anon;
-REVOKE ALL ON blotter_reports FROM anon;
-REVOKE ALL ON audit_logs FROM anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;

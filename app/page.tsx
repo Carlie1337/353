@@ -20,6 +20,7 @@ export default function HomePage() {
   const [officials, setOfficials] = useState<Official[]>([])
   const [systemStatus, setSystemStatus] = useState<"online" | "offline" | "maintenance">("online")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -29,32 +30,72 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load officials
-        const { data: officialsData } = await officialsService.getAllOfficials()
-        if (officialsData) setOfficials(officialsData)
+        setDataLoading(true)
+        
+        // Load officials with error handling
+        try {
+          const { data: officialsData } = await officialsService.getAllOfficials()
+          if (officialsData) setOfficials(officialsData)
+        } catch (error) {
+          console.warn("Could not load officials data:", error)
+          // Load fallback officials data
+          setOfficials([
+            {
+              id: "1",
+              name: "Hon. Maria Santos",
+              position: "Barangay Captain",
+              description: "Leading our community with integrity and dedication to public service for over 10 years.",
+              contact_email: "captain@barangaybucana.gov.ph",
+              contact_phone: "(082) 123-4567",
+              achievements: ["Community Development Award 2023", "Excellence in Governance Award 2022"],
+              image_url: "/placeholder.svg?height=120&width=120",
+              active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "2",
+              name: "Hon. Juan Dela Cruz",
+              position: "Barangay Kagawad - Infrastructure",
+              description: "Committed to improving infrastructure and community development programs.",
+              contact_email: "kagawad1@barangaybucana.gov.ph",
+              contact_phone: "(082) 123-4568",
+              achievements: ["Infrastructure Development Award 2023"],
+              image_url: "/placeholder.svg?height=80&width=80",
+              active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "3",
+              name: "Hon. Ana Reyes",
+              position: "Barangay Kagawad - Health & Wellness",
+              description: "Advocating for health and wellness programs for all residents.",
+              contact_email: "kagawad2@barangaybucana.gov.ph",
+              contact_phone: "(082) 123-4569",
+              achievements: ["Health Advocacy Award 2022"],
+              image_url: "/placeholder.svg?height=80&width=80",
+              active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ])
+        }
 
-        // Check system health
-        const { healthy } = await databaseService.healthCheck()
-        setSystemStatus(healthy ? "online" : "offline")
+        // Check system health with error handling
+        try {
+          const { healthy } = await databaseService.healthCheck()
+          setSystemStatus(healthy ? "online" : "offline")
+        } catch (error) {
+          console.warn("Could not check system health:", error)
+          setSystemStatus("maintenance")
+        }
+
       } catch (error) {
-        console.error("Error loading data:", error)
+        console.error("Error loading page data:", error)
         setSystemStatus("offline")
-        // Load fallback officials data
-        setOfficials([
-          {
-            id: "1",
-            name: "Hon. Maria Santos",
-            position: "Barangay Captain",
-            description: "Leading our community with integrity and dedication to public service.",
-            contact_email: "captain@barangaybucana.gov.ph",
-            contact_phone: "(082) 123-4567",
-            achievements: ["Community Development Award 2023", "Excellence in Governance"],
-            image_url: "/placeholder.svg?height=120&width=120",
-            active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ])
+      } finally {
+        setDataLoading(false)
       }
     }
 
@@ -125,7 +166,7 @@ export default function HomePage() {
               <span className="font-semibold">Community Health Advisory</span>
               <Badge className="bg-yellow-400 text-blue-900 text-xs px-2 py-1">MEDIUM</Badge>
             </div>
-            <span className="text-blue-100">
+            <span className="text-blue-100 hidden md:inline">
               Free COVID-19 vaccination available at Barangay Health Station. Walk-ins welcome from 8AM-5PM.
             </span>
           </div>
@@ -141,17 +182,17 @@ export default function HomePage() {
           <div className="flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
               <Phone className="h-4 w-4" />
-              <span>+63 912 345 6789</span>
+              <span className="hidden md:inline">+63 912 345 6789</span>
             </div>
             <div className="flex items-center space-x-2">
               <Mail className="h-4 w-4" />
-              <span>barangay.bucana@davao.gov.ph</span>
+              <span className="hidden md:inline">barangay.bucana@davao.gov.ph</span>
             </div>
           </div>
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4" />
-              <span>Mon-Fri: 8:00 AM - 5:00 PM</span>
+              <span className="hidden md:inline">Mon-Fri: 8:00 AM - 5:00 PM</span>
             </div>
             {user ? (
               <Link href="/portal">
@@ -196,30 +237,22 @@ export default function HomePage() {
                 <Home className="h-4 w-4 inline mr-1" />
                 Home
               </Link>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
-                  About
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-              </div>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
-                  Officials
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-              </div>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
-                  Services
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-              </div>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
-                  Programs
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </button>
-              </div>
+              <Link href="#about" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+                About
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Link>
+              <Link href="#officials" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+                Officials
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Link>
+              <Link href="/portal" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+                Services
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Link>
+              <Link href="/portal/bulletin" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+                Programs
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Link>
               <Link href="/portal/bulletin" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
                 News
               </Link>
@@ -302,7 +335,7 @@ export default function HomePage() {
       </section>
 
       {/* Barangay Information Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Barangay Information</h2>
@@ -443,16 +476,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Live Statistics */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Live System Statistics</h2>
-            <p className="text-lg text-gray-600">Real-time data from our integrated management system</p>
+      {/* Live Statistics - Only show if not loading */}
+      {!dataLoading && (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Live System Statistics</h2>
+              <p className="text-lg text-gray-600">Real-time data from our integrated management system</p>
+            </div>
+            <LiveStatsDashboard />
           </div>
-          <LiveStatsDashboard />
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Barangay Officials Section */}
       <section id="officials" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
@@ -555,12 +590,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* News & Announcements */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <NewsFeed limit={6} />
-        </div>
-      </section>
+      {/* News & Announcements - Only show if not loading */}
+      {!dataLoading && (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+          <div className="max-w-7xl mx-auto">
+            <NewsFeed limit={6} />
+          </div>
+        </section>
+      )}
 
       {/* Emergency Contact */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-red-50 border-t-4 border-red-500">

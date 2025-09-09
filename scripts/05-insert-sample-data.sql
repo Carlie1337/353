@@ -40,61 +40,48 @@ UPDATE households SET household_head_id = '770e8400-e29b-41d4-a716-446655440001'
 UPDATE households SET household_head_id = '770e8400-e29b-41d4-a716-446655440002' WHERE id = '660e8400-e29b-41d4-a716-446655440002';
 
 -- Insert barangay officials
-INSERT INTO barangay_officials (name, position, description, contact_email, contact_phone, achievements, image_url, term_start, term_end) VALUES
-('Hon. Maria Santos', 'Barangay Captain', 'Leading our community with integrity and dedication to public service for over 10 years. Committed to transparency, community development, and responsive governance.', 'captain@barangaybucana.gov.ph', '(082) 123-4567', ARRAY['Community Development Award 2023', 'Excellence in Governance Award 2022', 'Outstanding Public Service Recognition 2021', 'Disaster Preparedness Leadership Award 2020'], '/placeholder.svg?height=120&width=120', '2023-07-01', '2026-06-30'),
-('Hon. Juan Dela Cruz', 'Barangay Kagawad - Infrastructure', 'Committed to improving infrastructure and community development programs. Oversees road maintenance, public facilities, and construction projects.', 'kagawad1@barangaybucana.gov.ph', '(082) 123-4568', ARRAY['Infrastructure Development Award 2023', 'Public Works Excellence 2022'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Hon. Ana Reyes', 'Barangay Kagawad - Health & Wellness', 'Advocating for health and wellness programs for all residents. Coordinates with health centers and medical missions.', 'kagawad2@barangaybucana.gov.ph', '(082) 123-4569', ARRAY['Health Advocacy Award 2022', 'Community Health Champion 2021'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Hon. Pedro Martinez', 'Barangay Kagawad - Education & Youth', 'Focused on education and youth development initiatives. Promotes scholarship programs and youth activities.', 'kagawad3@barangaybucana.gov.ph', '(082) 123-4570', ARRAY['Youth Development Recognition 2023', 'Education Advocacy Award 2022'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Hon. Carmen Lopez', 'Barangay Kagawad - Women & Family', 'Advocates for women empowerment and family welfare programs. Leads gender and development initiatives.', 'kagawad4@barangaybucana.gov.ph', '(082) 123-4571', ARRAY['Women Empowerment Award 2023', 'Family Welfare Recognition 2022'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Hon. Roberto Garcia', 'Barangay Kagawad - Peace & Order', 'Ensures community safety and peace. Coordinates with law enforcement and security programs.', 'kagawad5@barangaybucana.gov.ph', '(082) 123-4572', ARRAY['Peace and Order Excellence 2023', 'Community Safety Award 2022'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Ms. Elena Fernandez', 'Barangay Secretary', 'Ensuring efficient administrative operations and record management. Handles official documents and correspondence.', 'secretary@barangaybucana.gov.ph', '(082) 123-4573', ARRAY['Administrative Excellence Award 2022', 'Records Management Recognition 2021'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30'),
-('Mr. Carlos Mendoza', 'Barangay Treasurer', 'Managing barangay finances with transparency and accountability. Oversees budget planning and financial reporting.', 'treasurer@barangaybucana.gov.ph', '(082) 123-4574', ARRAY['Financial Management Excellence 2023', 'Transparency Award 2022'], '/placeholder.svg?height=80&width=80', '2023-07-01', '2026-06-30')
+INSERT INTO public.barangay_officials (name, position, description, contact_email, contact_phone, achievements, image_url, term_start, term_end) VALUES
+('Hon. Maria Santos', 'Barangay Captain', 'Leading our community with integrity and dedication to public service for over 10 years. Committed to transparent governance and community development.', 'captain@barangaybucana.gov.ph', '(082) 123-4567', ARRAY['Community Development Award 2023', 'Excellence in Governance Award 2022', 'Outstanding Public Service Recognition 2021'], '/placeholder.svg?height=120&width=120', '2022-01-01', '2025-12-31'),
+('Hon. Juan Dela Cruz', 'Barangay Kagawad - Infrastructure', 'Committed to improving infrastructure and community development programs. Oversees road maintenance, drainage systems, and public facilities.', 'kagawad1@barangaybucana.gov.ph', '(082) 123-4568', ARRAY['Infrastructure Development Award 2023', 'Public Works Excellence 2022'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Hon. Ana Reyes', 'Barangay Kagawad - Health & Wellness', 'Advocating for health and wellness programs for all residents. Coordinates with health centers and manages community health initiatives.', 'kagawad2@barangaybucana.gov.ph', '(082) 123-4569', ARRAY['Health Advocacy Award 2022', 'Community Wellness Champion 2023'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Hon. Pedro Martinez', 'Barangay Kagawad - Education & Youth', 'Focused on education and youth development initiatives. Manages scholarship programs and youth activities.', 'kagawad3@barangaybucana.gov.ph', '(082) 123-4570', ARRAY['Youth Development Recognition 2023', 'Education Advocate Award 2022'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Hon. Rosa Garcia', 'Barangay Kagawad - Women & Family', 'Championing women''s rights and family welfare programs. Leads initiatives for gender equality and family support services.', 'kagawad4@barangaybucana.gov.ph', '(082) 123-4571', ARRAY['Women Empowerment Award 2023', 'Family Welfare Champion 2022'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Hon. Miguel Torres', 'Barangay Kagawad - Peace & Order', 'Maintaining peace and order in the community. Coordinates with law enforcement and manages security programs.', 'kagawad5@barangaybucana.gov.ph', '(082) 123-4572', ARRAY['Peace & Order Excellence 2023', 'Community Safety Award 2022'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Ms. Carmen Lopez', 'Barangay Secretary', 'Ensuring efficient administrative operations and record management. Handles official documents and correspondence.', 'secretary@barangaybucana.gov.ph', '(082) 123-4573', ARRAY['Administrative Excellence Award 2022', 'Records Management Recognition 2023'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31'),
+('Mr. Roberto Garcia', 'Barangay Treasurer', 'Managing barangay finances with transparency and accountability. Oversees budget planning and financial reporting.', 'treasurer@barangaybucana.gov.ph', '(082) 123-4574', ARRAY['Financial Management Excellence 2023', 'Transparency Award 2022'], '/placeholder.svg?height=80&width=80', '2022-01-01', '2025-12-31')
 ON CONFLICT DO NOTHING;
 
--- Insert emergency alerts
-INSERT INTO emergency_alerts (title, message, severity, alert_type, active, created_by) VALUES
-('Weather Advisory', 'Heavy rainfall expected in the next 24 hours. Residents in flood-prone areas are advised to take necessary precautions and prepare emergency kits.', 'medium', 'weather', true, '550e8400-e29b-41d4-a716-446655440000'),
-('Health Advisory', 'Free COVID-19 vaccination available at Barangay Health Station. Walk-ins welcome from 8AM-5PM. Bring valid ID and vaccination card if available.', 'low', 'health', true, '550e8400-e29b-41d4-a716-446655440001'),
-('Traffic Advisory', 'Road construction on Main Street from January 15-20. Alternative routes available via Oak Avenue and Pine Road.', 'medium', 'traffic', true, '550e8400-e29b-41d4-a716-446655440000')
-ON CONFLICT DO NOTHING;
+-- Insert sample document types
+INSERT INTO public.documents (document_type, title, description, is_public) VALUES
+('ordinance', 'Barangay Ordinance No. 001-2024', 'Ordinance regulating noise levels in residential areas', true),
+('resolution', 'Barangay Resolution No. 001-2024', 'Resolution approving the annual budget', true),
+('memo', 'Memorandum on Garbage Collection Schedule', 'Updated schedule for waste collection', true);
 
--- Insert announcements
-INSERT INTO announcements (title, content, category, priority, published, featured, created_by, published_at) VALUES
-('Community Clean-up Drive', 'Join us this Saturday, January 15, 2024, for our monthly community clean-up drive. Meeting point at the Barangay Hall at 6:00 AM. Bring your own cleaning materials and water. Light snacks will be provided.', 'community', 'medium', true, true, '550e8400-e29b-41d4-a716-446655440000', NOW()),
-('New Online Services Available', 'We are pleased to announce that document requests can now be processed online through our digital portal. Visit our website to learn more about available services and requirements.', 'services', 'high', true, true, '550e8400-e29b-41d4-a716-446655440000', NOW()),
-('Barangay Assembly Meeting', 'Monthly barangay assembly meeting scheduled for January 20, 2024, at 2:00 PM at the Barangay Hall. All residents are encouraged to attend. Agenda includes budget presentation and community projects update.', 'meeting', 'medium', true, false, '550e8400-e29b-41d4-a716-446655440000', NOW()),
-('Senior Citizens Benefits', 'Senior citizens are reminded to claim their quarterly benefits at the Barangay Hall. Bring valid ID and senior citizen card. Office hours: Monday to Friday, 8AM-5PM.', 'benefits', 'medium', true, false, '550e8400-e29b-41d4-a716-446655440000', NOW()),
-('Youth Sports Program', 'Registration for the Youth Basketball League is now open! Ages 13-21 welcome. Registration fee: PHP 200. Contact the Youth Development Office for more information.', 'youth', 'low', true, false, '550e8400-e29b-41d4-a716-446655440000', NOW())
-ON CONFLICT DO NOTHING;
+-- Insert sample announcements
+INSERT INTO public.announcements (title, content, category, priority, author_id, target_audience, is_published, publish_date) VALUES
+('Community Clean-up Drive', 'Join us this Saturday for our monthly community clean-up drive. Meeting point at the Barangay Hall at 6:00 AM.', 'Community', 'high', (SELECT id FROM auth.users LIMIT 1), 'all', true, NOW()),
+('Health Check-up Schedule', 'Free health check-up for senior citizens every Tuesday at the Health Center. Please bring your senior citizen ID.', 'Health', 'normal', (SELECT id FROM auth.users LIMIT 1), 'senior_citizens', true, NOW()),
+('Basketball Tournament Registration', 'Registration for the annual basketball tournament is now open. Contact the Barangay Hall for more details.', 'Sports', 'normal', (SELECT id FROM auth.users LIMIT 1), 'youth', true, NOW());
 
--- Insert sample incidents
-INSERT INTO incidents (title, description, incident_type, severity, location, reported_by, status) VALUES
-('Street Light Not Working', 'Street light on Main Street corner Oak Avenue is not functioning since last week. Area becomes dark at night affecting pedestrian safety.', 'infrastructure', 'medium', 'Main Street corner Oak Avenue', '550e8400-e29b-41d4-a716-446655440006', 'reported'),
-('Noise Complaint', 'Loud music from neighbor disturbing peace during late hours. Ongoing issue for the past week affecting sleep of nearby residents.', 'noise', 'low', '456 Oak Avenue', '550e8400-e29b-41d4-a716-446655440006', 'investigating'),
-('Stray Dogs', 'Pack of stray dogs roaming the area, causing concern for residents especially children. Dogs appear aggressive and may pose health risks.', 'animal', 'medium', 'Park Area, Purok 2', '550e8400-e29b-41d4-a716-446655440006', 'reported'),
-('Pothole on Road', 'Large pothole on Pine Road causing damage to vehicles. Multiple residents have reported tire damage due to this road hazard.', 'infrastructure', 'high', 'Pine Road, Purok 3', '550e8400-e29b-41d4-a716-446655440006', 'processing')
-ON CONFLICT DO NOTHING;
-
--- Insert sample appointments
-INSERT INTO appointments (resident_id, appointment_type, appointment_date, appointment_time, purpose, status) VALUES
-('770e8400-e29b-41d4-a716-446655440000', 'Document Processing', CURRENT_DATE + INTERVAL '2 days', '09:00:00', 'Barangay Clearance for employment', 'scheduled'),
-('770e8400-e29b-41d4-a716-446655440000', 'Health Consultation', CURRENT_DATE + INTERVAL '3 days', '14:00:00', 'Annual health checkup', 'scheduled'),
-('770e8400-e29b-41d4-a716-446655440001', 'Legal Consultation', CURRENT_DATE + INTERVAL '5 days', '10:00:00', 'Property dispute mediation', 'confirmed')
-ON CONFLICT DO NOTHING;
+-- Insert sample events
+INSERT INTO events (title, description, event_date, location, organizer_id, max_participants, registration_required, status) VALUES
+('Barangay Fiesta 2024', 'Annual celebration of our barangay with cultural shows, games, and food festival.', '2024-12-15 08:00:00+08', 'Barangay Plaza', (SELECT id FROM auth.users LIMIT 1), 500, false, 'upcoming'),
+('Youth Leadership Seminar', 'Leadership training for young residents aged 18-30.', '2024-08-20 09:00:00+08', 'Barangay Hall Conference Room', (SELECT id FROM auth.users LIMIT 1), 50, true, 'upcoming'),
+('Senior Citizens Day', 'Special celebration for our beloved senior citizens with entertainment and free meals.', '2024-10-01 10:00:00+08', 'Community Center', (SELECT id FROM auth.users LIMIT 1), 200, false, 'upcoming');
 
 -- Insert sample document requests
-INSERT INTO document_requests (resident_id, document_type, purpose, status, processing_fee) VALUES
-('770e8400-e29b-41d4-a716-446655440000', 'Barangay Clearance', 'Employment requirement', 'processing', 50.00),
-('770e8400-e29b-41d4-a716-446655440000', 'Certificate of Residency', 'School enrollment', 'pending', 30.00),
-('770e8400-e29b-41d4-a716-446655440001', 'Business Permit', 'Sari-sari store operation', 'ready', 200.00),
-('770e8400-e29b-41d4-a716-446655440002', 'Indigency Certificate', 'Medical assistance', 'released', 0.00)
+INSERT INTO public.document_requests (document_type, purpose, status, request_date, fee_amount, fee_paid) VALUES
+('Barangay Clearance', 'Employment Requirements', 'processing', '2024-01-10', 50.00, true),
+('Certificate of Residency', 'School Enrollment', 'ready', '2024-01-08', 30.00, true),
+('Barangay Business Clearance', 'Business Registration', 'pending', '2024-01-12', 100.00, false),
+('Certificate of Indigency', 'Medical Assistance', 'released', '2024-01-05', 0.00, true)
 ON CONFLICT DO NOTHING;
 
 -- Insert sample blotter reports
-INSERT INTO blotter_reports (case_number, complainant_id, respondent_name, incident_type, incident_date, incident_location, description, status) VALUES
-('BLT-2024-001', '770e8400-e29b-41d4-a716-446655440000', 'John Doe', 'Noise Complaint', CURRENT_DATE - INTERVAL '5 days', '123 Main Street', 'Loud music during late hours disturbing neighbors', 'mediation'),
-('BLT-2024-002', '770e8400-e29b-41d4-a716-446655440001', 'Jane Smith', 'Property Dispute', CURRENT_DATE - INTERVAL '10 days', '456 Oak Avenue', 'Boundary dispute between neighbors', 'investigating'),
-('BLT-2024-003', '770e8400-e29b-41d4-a716-446655440002', 'Bob Johnson', 'Verbal Altercation', CURRENT_DATE - INTERVAL '3 days', 'Purok 2 Basketball Court', 'Heated argument during basketball game', 'resolved')
+INSERT INTO public.blotter_reports (respondent_name, respondent_address, incident_type, incident_description, incident_date, incident_time, incident_location, status) VALUES
+('John Doe', 'Block 5 Lot 10, Santos Subdivision', 'Noise Disturbance', 'Loud music and shouting during late hours disturbing neighbors. Multiple complaints received from surrounding residents.', '2024-01-10', '23:30:00', 'Santos Subdivision, Purok 7', 'mediation'),
+('Jane Smith', 'House #25, Mabini Street', 'Property Dispute', 'Boundary dispute between neighbors regarding fence installation. Both parties claim ownership of disputed area.', '2024-01-08', '15:00:00', 'Mabini Street, Purok 3', 'investigating'),
+('Unknown Person', 'Unknown', 'Theft', 'Bicycle stolen from front yard. Security camera footage available for investigation.', '2024-01-12', '02:00:00', 'Rizal Street, Purok 5', 'filed')
 ON CONFLICT DO NOTHING;
 
 -- Insert sample audit logs
@@ -104,3 +91,9 @@ INSERT INTO audit_logs (user_id, action, resource_type, resource_id, new_values)
 ('550e8400-e29b-41d4-a716-446655440001', 'update', 'appointment', '1', '{"status": "confirmed"}'),
 ('550e8400-e29b-41d4-a716-446655440000', 'create', 'announcement', '1', '{"title": "Community Clean-up Drive", "published": true}')
 ON CONFLICT DO NOTHING;
+
+-- Insert sample incident types
+INSERT INTO public.incidents (incident_type, title, description, location, severity, status) VALUES
+('infrastructure', 'Broken Street Light', 'Street light on Mabini Street is not working', 'Mabini Street, Purok 1', 'medium', 'reported'),
+('public_safety', 'Stray Dogs', 'Multiple stray dogs roaming in the area causing safety concerns', 'Purok 2 vicinity', 'high', 'investigating'),
+('utilities', 'Water Pipe Leak', 'Water pipe leak causing flooding on the road', 'Rizal Street corner Bonifacio', 'high', 'in_progress');
