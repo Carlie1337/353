@@ -20,7 +20,7 @@ class OfficialsService {
       id: "1",
       name: "Hon. Maria Santos",
       position: "Barangay Captain",
-      contact_number: "(082) 123-4567",
+      contact_number: "+63 912 345 6789",
       email: "captain@barangay.gov.ph",
       photo_url: "/placeholder.svg?height=120&width=120",
       status: "active",
@@ -32,10 +32,10 @@ class OfficialsService {
     {
       id: "2",
       name: "Hon. Juan Dela Cruz",
-      position: "Barangay Kagawad - Committee on Peace and Order",
-      contact_number: "(082) 123-4568",
+      position: "Barangay Kagawad",
+      contact_number: "+63 912 345 6790",
       email: "kagawad1@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=80&width=80",
+      photo_url: "/placeholder.svg?height=120&width=120",
       status: "active",
       term_start: "2023-01-01",
       term_end: "2025-12-31",
@@ -45,10 +45,10 @@ class OfficialsService {
     {
       id: "3",
       name: "Hon. Ana Reyes",
-      position: "Barangay Kagawad - Committee on Health",
-      contact_number: "(082) 123-4569",
+      position: "Barangay Kagawad",
+      contact_number: "+63 912 345 6791",
       email: "kagawad2@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=80&width=80",
+      photo_url: "/placeholder.svg?height=120&width=120",
       status: "active",
       term_start: "2023-01-01",
       term_end: "2025-12-31",
@@ -57,27 +57,23 @@ class OfficialsService {
     },
     {
       id: "4",
-      name: "Hon. Pedro Garcia",
-      position: "Barangay Kagawad - Committee on Infrastructure",
-      contact_number: "(082) 123-4570",
-      email: "kagawad3@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=80&width=80",
+      name: "Pedro Martinez",
+      position: "Barangay Secretary",
+      contact_number: "+63 912 345 6792",
+      email: "secretary@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=120&width=120",
       status: "active",
-      term_start: "2023-01-01",
-      term_end: "2025-12-31",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     {
       id: "5",
-      name: "Hon. Rosa Martinez",
-      position: "Barangay Secretary",
-      contact_number: "(082) 123-4571",
-      email: "secretary@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=80&width=80",
+      name: "Rosa Garcia",
+      position: "Barangay Treasurer",
+      contact_number: "+63 912 345 6793",
+      email: "treasurer@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=120&width=120",
       status: "active",
-      term_start: "2023-01-01",
-      term_end: "2025-12-31",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
@@ -85,19 +81,6 @@ class OfficialsService {
 
   async getAllOfficials(): Promise<BarangayOfficial[]> {
     try {
-      // Test connection first
-      const { data: testData, error: testError } = await supabase
-        .from("barangay_officials")
-        .select("count")
-        .limit(1)
-        .single()
-
-      if (testError) {
-        console.warn("Database connection failed, using fallback data:", testError.message)
-        return this.fallbackOfficials
-      }
-
-      // Fetch real data
       const { data, error } = await supabase
         .from("barangay_officials")
         .select("*")
@@ -105,14 +88,13 @@ class OfficialsService {
         .order("position", { ascending: true })
 
       if (error) {
-        console.warn("Error fetching officials from database:", error.message)
+        console.warn("Database error, using fallback officials:", error.message)
         return this.fallbackOfficials
       }
 
-      // Return real data if available, otherwise fallback
       return data && data.length > 0 ? data : this.fallbackOfficials
     } catch (error: any) {
-      console.warn("Officials service error:", error.message)
+      console.warn("Error fetching officials, using fallback data:", error.message)
       return this.fallbackOfficials
     }
   }
@@ -122,29 +104,26 @@ class OfficialsService {
       const { data, error } = await supabase.from("barangay_officials").select("*").eq("id", id).single()
 
       if (error) {
-        // Try fallback data
-        const fallbackOfficial = this.fallbackOfficials.find((official) => official.id === id)
-        return fallbackOfficial || null
+        const fallback = this.fallbackOfficials.find((o) => o.id === id)
+        return fallback || null
       }
 
       return data
-    } catch (error: any) {
-      console.warn("Error fetching official by ID:", error.message)
-      const fallbackOfficial = this.fallbackOfficials.find((official) => official.id === id)
-      return fallbackOfficial || null
+    } catch (error) {
+      const fallback = this.fallbackOfficials.find((o) => o.id === id)
+      return fallback || null
     }
   }
 
-  async createOfficial(officialData: Omit<BarangayOfficial, "id" | "created_at" | "updated_at">): Promise<{
-    data: BarangayOfficial | null
-    error: string | null
-  }> {
+  async createOfficial(
+    official: Omit<BarangayOfficial, "id" | "created_at" | "updated_at">,
+  ): Promise<BarangayOfficial | null> {
     try {
       const { data, error } = await supabase
         .from("barangay_officials")
         .insert([
           {
-            ...officialData,
+            ...official,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -152,23 +131,16 @@ class OfficialsService {
         .select()
         .single()
 
-      if (error) {
-        return { data: null, error: error.message }
-      }
+      if (error) throw error
 
-      return { data, error: null }
+      return data
     } catch (error: any) {
-      return { data: null, error: error.message }
+      console.error("Error creating official:", error.message)
+      return null
     }
   }
 
-  async updateOfficial(
-    id: string,
-    updates: Partial<Omit<BarangayOfficial, "id" | "created_at">>,
-  ): Promise<{
-    data: BarangayOfficial | null
-    error: string | null
-  }> {
+  async updateOfficial(id: string, updates: Partial<BarangayOfficial>): Promise<BarangayOfficial | null> {
     try {
       const { data, error } = await supabase
         .from("barangay_officials")
@@ -180,27 +152,23 @@ class OfficialsService {
         .select()
         .single()
 
-      if (error) {
-        return { data: null, error: error.message }
-      }
+      if (error) throw error
 
-      return { data, error: null }
+      return data
     } catch (error: any) {
-      return { data: null, error: error.message }
+      console.error("Error updating official:", error.message)
+      return null
     }
   }
 
-  async deleteOfficial(id: string): Promise<{ error: string | null }> {
+  async deleteOfficial(id: string): Promise<boolean> {
     try {
       const { error } = await supabase.from("barangay_officials").delete().eq("id", id)
 
-      if (error) {
-        return { error: error.message }
-      }
-
-      return { error: null }
+      return !error
     } catch (error: any) {
-      return { error: error.message }
+      console.error("Error deleting official:", error.message)
+      return false
     }
   }
 

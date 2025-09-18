@@ -150,6 +150,7 @@ class DatabaseService {
   }
 }
 
-// Export both named and default exports
-export const databaseService = new DatabaseService()
+// Create instance and export both ways
+const databaseService = new DatabaseService()
+export { databaseService }
 export default databaseService
