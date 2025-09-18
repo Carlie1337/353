@@ -1,127 +1,129 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, ArrowRight, Megaphone, FileText, AlertCircle, Info } from "lucide-react"
-import { supabase } from "@/lib/supabase-client"
+import { Calendar, Clock, User, ArrowRight, Megaphone, AlertCircle, Info } from "lucide-react"
 import Link from "next/link"
 
 interface NewsItem {
   id: string
   title: string
   content: string
-  excerpt: string
-  category: "announcement" | "news" | "event" | "alert"
-  priority: "low" | "medium" | "high" | "urgent"
-  author_name: string
-  author_avatar?: string
-  published_at: string
-  image_url?: string
-  read_count: number
+  category: "announcement" | "event" | "alert" | "news"
+  priority: "low" | "medium" | "high"
+  author: string
+  publishedAt: string
+  imageUrl?: string
 }
 
-export function NewsFeed({ limit = 6 }: { limit?: number }) {
+interface NewsFeedProps {
+  limit?: number
+}
+
+export function NewsFeed({ limit = 6 }: NewsFeedProps) {
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadNews()
+    const fetchNews = async () => {
+      try {
+        setLoading(true)
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel("news_updates")
-      .on("postgres_changes", { event: "*", schema: "public", table: "news_articles" }, () => loadNews())
-      .subscribe()
+        // Simulate API call with fallback data
+        await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+        const fallbackNews: NewsItem[] = [
+          {
+            id: "1",
+            title: "Community Health Program: Free Medical Check-up",
+            content:
+              "The Barangay Health Center will conduct free medical check-ups for all residents aged 60 and above. The program includes blood pressure monitoring, diabetes screening, and general consultation.",
+            category: "announcement",
+            priority: "high",
+            author: "Barangay Health Office",
+            publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Health+Program",
+          },
+          {
+            id: "2",
+            title: "Barangay Assembly Meeting - January 2025",
+            content:
+              "All residents are invited to attend the monthly barangay assembly meeting. We will discuss upcoming projects, budget allocation, and community concerns.",
+            category: "event",
+            priority: "medium",
+            author: "Barangay Secretary",
+            publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Assembly+Meeting",
+          },
+          {
+            id: "3",
+            title: "Road Maintenance Schedule",
+            content:
+              "Road maintenance and repair work will be conducted on Main Street from January 15-20. Expect temporary traffic delays and plan alternate routes.",
+            category: "alert",
+            priority: "medium",
+            author: "Infrastructure Committee",
+            publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Road+Maintenance",
+          },
+          {
+            id: "4",
+            title: "New Online Document Request System",
+            content:
+              "We're excited to announce the launch of our new online document request system. Residents can now apply for certificates and clearances through our digital portal.",
+            category: "news",
+            priority: "medium",
+            author: "IT Department",
+            publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Online+System",
+          },
+          {
+            id: "5",
+            title: "Youth Sports Festival 2025",
+            content:
+              "Registration is now open for the annual Youth Sports Festival. Categories include basketball, volleyball, and track and field events for ages 12-25.",
+            category: "event",
+            priority: "low",
+            author: "Youth Development Office",
+            publishedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Sports+Festival",
+          },
+          {
+            id: "6",
+            title: "Waste Segregation Reminder",
+            content:
+              "Please remember to properly segregate your waste. Biodegradable waste should be separated from non-biodegradable materials. Collection schedules remain unchanged.",
+            category: "announcement",
+            priority: "low",
+            author: "Environmental Office",
+            publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            imageUrl: "/placeholder.svg?height=200&width=400&text=Waste+Segregation",
+          },
+        ]
 
-  const loadNews = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("news_articles")
-        .select(`
-          *,
-          author:users(name, avatar_url)
-        `)
-        .eq("published", true)
-        .order("published_at", { ascending: false })
-        .limit(limit)
-
-      if (!error && data) {
-        const formattedNews = data.map((item) => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          excerpt: item.excerpt || item.content.substring(0, 150) + "...",
-          category: item.category || "news",
-          priority: item.priority || "medium",
-          author_name: item.author?.name || "Barangay Office",
-          author_avatar: item.author?.avatar_url,
-          published_at: item.published_at,
-          image_url: item.image_url,
-          read_count: item.read_count || 0,
-        }))
-        setNews(formattedNews)
+        setNews(fallbackNews.slice(0, limit))
+      } catch (error) {
+        console.error("Error fetching news:", error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("Error loading news:", error)
-      // Fallback news data
-      setNews([
-        {
-          id: "1",
-          title: "New Online Services Now Available",
-          content: "Residents can now access document requests, appointment booking, and other services online 24/7.",
-          excerpt: "Residents can now access document requests, appointment booking, and other services online 24/7.",
-          category: "announcement",
-          priority: "high",
-          author_name: "Barangay Captain",
-          published_at: new Date().toISOString(),
-          read_count: 245,
-        },
-        {
-          id: "2",
-          title: "Community Health Program Launch",
-          content: "Free health checkups and vaccination programs are now available at the barangay health center.",
-          excerpt: "Free health checkups and vaccination programs are now available at the barangay health center.",
-          category: "news",
-          priority: "medium",
-          author_name: "Health Officer",
-          published_at: new Date(Date.now() - 86400000).toISOString(),
-          read_count: 189,
-        },
-        {
-          id: "3",
-          title: "Monthly Community Meeting",
-          content: "Join us for our monthly community meeting to discuss local issues and upcoming projects.",
-          excerpt: "Join us for our monthly community meeting to discuss local issues and upcoming projects.",
-          category: "event",
-          priority: "medium",
-          author_name: "Secretary",
-          published_at: new Date(Date.now() - 172800000).toISOString(),
-          read_count: 156,
-        },
-      ])
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchNews()
+  }, [limit])
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "announcement":
         return <Megaphone className="h-4 w-4" />
-      case "news":
-        return <FileText className="h-4 w-4" />
       case "event":
         return <Calendar className="h-4 w-4" />
       case "alert":
         return <AlertCircle className="h-4 w-4" />
+      case "news":
+        return <Info className="h-4 w-4" />
       default:
         return <Info className="h-4 w-4" />
     }
@@ -131,119 +133,127 @@ export function NewsFeed({ limit = 6 }: { limit?: number }) {
     switch (category) {
       case "announcement":
         return "bg-blue-100 text-blue-800"
-      case "news":
-        return "bg-green-100 text-green-800"
       case "event":
-        return "bg-purple-100 text-purple-800"
+        return "bg-green-100 text-green-800"
       case "alert":
         return "bg-red-100 text-red-800"
+      case "news":
+        return "bg-purple-100 text-purple-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
   }
 
-  const getPriorityBorder = (priority: string) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "urgent":
-        return "border-l-4 border-red-500"
       case "high":
-        return "border-l-4 border-orange-500"
+        return "bg-red-500"
       case "medium":
-        return "border-l-4 border-blue-500"
+        return "bg-yellow-500"
       case "low":
-        return "border-l-4 border-gray-300"
+        return "bg-green-500"
       default:
-        return ""
+        return "bg-gray-500"
     }
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
   }
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-3 bg-gray-200 rounded w-4/6"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">News & Announcements</h2>
+          <p className="text-lg text-gray-600">Loading latest updates...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+              <CardContent className="p-6">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Latest News & Updates</h2>
-        <Link href="/portal/bulletin">
-          <Button variant="outline">
-            View All
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">News & Announcements</h2>
+        <p className="text-lg text-gray-600">Stay updated with the latest community news and important announcements</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {news.map((item) => (
-          <Card
-            key={item.id}
-            className={`hover:shadow-lg transition-shadow cursor-pointer ${getPriorityBorder(item.priority)}`}
-          >
-            {item.image_url && (
-              <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
-                <img
-                  src={item.image_url || "/placeholder.svg"}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between mb-2">
+          <Card key={item.id} className="hover:shadow-lg transition-shadow group cursor-pointer overflow-hidden">
+            <div className="relative">
+              <img
+                src={item.imageUrl || "/placeholder.svg?height=200&width=400"}
+                alt={item.title}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute top-4 left-4 flex items-center space-x-2">
                 <Badge className={getCategoryColor(item.category)}>
                   {getCategoryIcon(item.category)}
                   <span className="ml-1 capitalize">{item.category}</span>
                 </Badge>
-                <div className="text-xs text-gray-500">{item.read_count} reads</div>
+                <div className={`w-3 h-3 rounded-full ${getPriorityColor(item.priority)}`}></div>
               </div>
-              <CardTitle className="text-lg leading-tight">{item.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <CardDescription className="text-sm text-gray-600 mb-4 line-clamp-3">{item.excerpt}</CardDescription>
+            </div>
 
-              <div className="flex items-center justify-between">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg mb-3 text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                {item.title}
+              </h3>
+
+              <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">{item.content}</p>
+
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                 <div className="flex items-center space-x-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={item.author_avatar || "/placeholder.svg"} />
-                    <AvatarFallback className="text-xs">{item.author_name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs text-gray-500">{item.author_name}</span>
+                  <User className="h-3 w-3" />
+                  <span>{item.author}</span>
                 </div>
-                <div className="text-xs text-gray-500 flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {new Date(item.published_at).toLocaleDateString()}
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatDate(item.publishedAt)}</span>
                 </div>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full group-hover:bg-blue-50 group-hover:border-blue-200 bg-transparent"
+              >
+                Read More
+                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {news.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No news available</h3>
-          <p className="text-gray-500">Check back later for updates and announcements.</p>
-        </div>
-      )}
+      <div className="text-center">
+        <Link href="/portal/bulletin">
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+            View All News & Announcements
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

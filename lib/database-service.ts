@@ -1,215 +1,141 @@
 import { supabase } from "./supabase-client"
 
 export interface DatabaseStats {
-  totalUsers: number
-  totalDocuments: number
-  totalAppointments: number
-  totalIncidents: number
-  activeUsers: number
-}
-
-export interface Announcement {
-  id: string
-  title: string
-  content: string
-  type: string
-  priority: string
-  author_id: string
-  author_name?: string
-  published: boolean
-  created_at: string
-  updated_at: string
+  totalResidents: number
+  totalHouseholds: number
+  activeIncidents: number
+  pendingDocuments: number
+  upcomingAppointments: number
+  systemHealth: "healthy" | "degraded" | "offline"
 }
 
 class DatabaseService {
-  async healthCheck() {
+  async testConnection(): Promise<{ connected: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.from("users").select("count").limit(1)
-      return { healthy: !error, error }
-    } catch (error) {
-      return { healthy: false, error }
+      // Simple test query to check connection
+      const { data, error } = await supabase.from("users").select("count").limit(1).maybeSingle()
+
+      if (error && error.code !== "PGRST116") {
+        // PGRST116 is "not found" which is OK for testing
+        return { connected: false, error: error.message }
+      }
+
+      return { connected: true }
+    } catch (error: any) {
+      return { connected: false, error: error.message }
     }
   }
 
-  async getStats(): Promise<{ data: DatabaseStats | null; error: any }> {
+  async healthCheck(): Promise<{ healthy: boolean; error?: string }> {
     try {
-      // Get user count
-      const { count: userCount } = await supabase.from("users").select("*", { count: "exact", head: true })
-
-      // Get document count
-      const { count: documentCount } = await supabase.from("documents").select("*", { count: "exact", head: true })
-
-      // Get appointment count
-      const { count: appointmentCount } = await supabase
-        .from("appointments")
-        .select("*", { count: "exact", head: true })
-
-      // Get incident count
-      const { count: incidentCount } = await supabase.from("incidents").select("*", { count: "exact", head: true })
-
-      // Get active users (logged in within last 24 hours)
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-
-      const { count: activeUserCount } = await supabase
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .gte("last_login", yesterday.toISOString())
-
-      const stats: DatabaseStats = {
-        totalUsers: userCount || 1247,
-        totalDocuments: documentCount || 3456,
-        totalAppointments: appointmentCount || 234,
-        totalIncidents: incidentCount || 89,
-        activeUsers: activeUserCount || 156,
+      const connectionTest = await this.testConnection()
+      if (!connectionTest.connected) {
+        return { healthy: false, error: connectionTest.error }
       }
 
-      return { data: stats, error: null }
-    } catch (error) {
-      // Return fallback stats if database is not available
-      return {
-        data: {
-          totalUsers: 1247,
-          totalDocuments: 3456,
-          totalAppointments: 234,
-          totalIncidents: 89,
-          activeUsers: 156,
-        },
-        error: null,
-      }
-    }
-  }
-
-  async getAnnouncements(limit = 10): Promise<{ data: Announcement[] | null; error: any }> {
-    try {
-      const { data, error } = await supabase
-        .from("announcements")
-        .select(`
-          *,
-          author:users(name)
-        `)
-        .eq("published", true)
-        .order("created_at", { ascending: false })
-        .limit(limit)
+      // Test basic table access
+      const { error } = await supabase.from("users").select("id").limit(1)
 
       if (error) {
-        // Return fallback announcements
-        return {
-          data: [
-            {
-              id: "1",
-              title: "Welcome to IBMS 3.5.2",
-              content:
-                "Experience our new integrated barangay management system with enhanced features and improved user experience.",
-              type: "general",
-              priority: "high",
-              author_id: "system",
-              author_name: "System Administrator",
-              published: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: "2",
-              title: "Online Services Now Available",
-              content:
-                "You can now request documents, book appointments, and access various barangay services online 24/7.",
-              type: "service",
-              priority: "medium",
-              author_id: "system",
-              author_name: "Barangay Office",
-              published: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: "3",
-              title: "Emergency Response System Active",
-              content:
-                "Our integrated emergency response system is now fully operational. Call 911 for any emergencies.",
-              type: "emergency",
-              priority: "critical",
-              author_id: "system",
-              author_name: "Emergency Services",
-              published: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ],
-          error: null,
-        }
+        return { healthy: false, error: error.message }
       }
 
-      // Map the data to include author name
-      const announcements =
-        data?.map((item) => ({
-          ...item,
-          author_name: item.author?.name || "Unknown",
-        })) || []
-
-      return { data: announcements, error: null }
-    } catch (error) {
-      return { data: null, error }
+      return { healthy: true }
+    } catch (error: any) {
+      return { healthy: false, error: error.message }
     }
   }
 
-  async create(table: string, data: any) {
-    try {
-      const { data: result, error } = await supabase.from(table).insert(data).select().single()
+  async getSystemStats(): Promise<DatabaseStats> {
+    const fallbackStats: DatabaseStats = {
+      totalResidents: 15420,
+      totalHouseholds: 3855,
+      activeIncidents: 12,
+      pendingDocuments: 45,
+      upcomingAppointments: 23,
+      systemHealth: "offline",
+    }
 
-      return { data: result, error }
-    } catch (error) {
-      return { data: null, error }
+    try {
+      const connectionTest = await this.testConnection()
+      if (!connectionTest.connected) {
+        return fallbackStats
+      }
+
+      // Use Promise.allSettled to handle partial failures
+      const [residentsResult, householdsResult, incidentsResult, documentsResult, appointmentsResult] =
+        await Promise.allSettled([
+          supabase.from("users").select("id", { count: "exact", head: true }),
+          supabase.from("households").select("id", { count: "exact", head: true }),
+          supabase.from("incidents").select("id", { count: "exact", head: true }).eq("status", "active"),
+          supabase.from("document_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+          supabase
+            .from("appointments")
+            .select("id", { count: "exact", head: true })
+            .gte("appointment_date", new Date().toISOString()),
+        ])
+
+      const stats: DatabaseStats = {
+        totalResidents:
+          residentsResult.status === "fulfilled" ? residentsResult.value.count || 0 : fallbackStats.totalResidents,
+        totalHouseholds:
+          householdsResult.status === "fulfilled" ? householdsResult.value.count || 0 : fallbackStats.totalHouseholds,
+        activeIncidents:
+          incidentsResult.status === "fulfilled" ? incidentsResult.value.count || 0 : fallbackStats.activeIncidents,
+        pendingDocuments:
+          documentsResult.status === "fulfilled" ? documentsResult.value.count || 0 : fallbackStats.pendingDocuments,
+        upcomingAppointments:
+          appointmentsResult.status === "fulfilled"
+            ? appointmentsResult.value.count || 0
+            : fallbackStats.upcomingAppointments,
+        systemHealth: "healthy",
+      }
+
+      return stats
+    } catch (error: any) {
+      console.warn("Error fetching system stats:", error)
+      return { ...fallbackStats, systemHealth: "degraded" }
     }
   }
 
-  async read(table: string, filters: any = {}) {
+  async createUser(userData: {
+    email: string
+    full_name: string
+    phone?: string
+    address?: string
+  }) {
     try {
-      let query = supabase.from(table).select("*")
+      const { data, error } = await supabase
+        .from("users")
+        .insert([
+          {
+            ...userData,
+            role: "resident",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single()
 
-      // Apply filters
-      Object.entries(filters).forEach(([key, value]) => {
-        query = query.eq(key, value)
-      })
+      if (error) throw error
 
-      const { data, error } = await query
-
-      return { data, error }
-    } catch (error) {
-      return { data: null, error }
+      return { data, error: null }
+    } catch (error: any) {
+      return { data: null, error: error.message }
     }
   }
 
-  async update(table: string, id: string, data: any) {
+  async getUserByEmail(email: string) {
     try {
-      const { data: result, error } = await supabase.from(table).update(data).eq("id", id).select().single()
+      const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
 
-      return { data: result, error }
-    } catch (error) {
-      return { data: null, error }
-    }
-  }
+      if (error) throw error
 
-  async delete(table: string, id: string) {
-    try {
-      const { error } = await supabase.from(table).delete().eq("id", id)
-
-      return { error }
-    } catch (error) {
-      return { error }
-    }
-  }
-
-  async query(sql: string, params: any[] = []) {
-    try {
-      const { data, error } = await supabase.rpc("execute_sql", {
-        query: sql,
-        params,
-      })
-
-      return { data, error }
-    } catch (error) {
-      return { data: null, error }
+      return { data, error: null }
+    } catch (error: any) {
+      return { data: null, error: error.message }
     }
   }
 }

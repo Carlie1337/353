@@ -5,9 +5,32 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, FileText, Calendar, AlertTriangle, Shield, Heart, Building, Phone, Mail, MapPin, CheckCircle, XCircle, Activity, Star, ArrowRight, Menu, X, Crown, Award, UserCheck, Globe, Zap, Lock, Smartphone, Home, ChevronDown, Clock, PhoneCall } from 'lucide-react'
+import {
+  Users,
+  FileText,
+  Calendar,
+  AlertTriangle,
+  Shield,
+  Heart,
+  Building,
+  Phone,
+  Mail,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  Activity,
+  Menu,
+  X,
+  Crown,
+  Award,
+  UserCheck,
+  Globe,
+  Home,
+  ChevronDown,
+  Clock,
+  PhoneCall,
+} from "lucide-react"
 import { useAuth } from "@/components/unified-auth-provider"
-import { EmergencyAlertBanner } from "@/components/emergency-alert-banner"
 import { LiveStatsDashboard } from "@/components/live-stats-dashboard"
 import { NewsFeed } from "@/components/news-feed"
 import { EnhancedFooter } from "@/components/enhanced-footer"
@@ -21,6 +44,7 @@ export default function HomePage() {
   const [systemStatus, setSystemStatus] = useState<"online" | "offline" | "maintenance">("online")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -31,69 +55,49 @@ export default function HomePage() {
     const loadData = async () => {
       try {
         setDataLoading(true)
-        
-        // Load officials with error handling
-        try {
-          const { data: officialsData } = await officialsService.getAllOfficials()
-          if (officialsData) setOfficials(officialsData)
-        } catch (error) {
-          console.warn("Could not load officials data:", error)
-          // Load fallback officials data
-          setOfficials([
-            {
-              id: "1",
-              name: "Hon. Maria Santos",
-              position: "Barangay Captain",
-              description: "Leading our community with integrity and dedication to public service for over 10 years.",
-              contact_email: "captain@barangaybucana.gov.ph",
-              contact_phone: "(082) 123-4567",
-              achievements: ["Community Development Award 2023", "Excellence in Governance Award 2022"],
-              image_url: "/placeholder.svg?height=120&width=120",
-              active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: "2",
-              name: "Hon. Juan Dela Cruz",
-              position: "Barangay Kagawad - Infrastructure",
-              description: "Committed to improving infrastructure and community development programs.",
-              contact_email: "kagawad1@barangaybucana.gov.ph",
-              contact_phone: "(082) 123-4568",
-              achievements: ["Infrastructure Development Award 2023"],
-              image_url: "/placeholder.svg?height=80&width=80",
-              active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: "3",
-              name: "Hon. Ana Reyes",
-              position: "Barangay Kagawad - Health & Wellness",
-              description: "Advocating for health and wellness programs for all residents.",
-              contact_email: "kagawad2@barangaybucana.gov.ph",
-              contact_phone: "(082) 123-4569",
-              achievements: ["Health Advocacy Award 2022"],
-              image_url: "/placeholder.svg?height=80&width=80",
-              active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ])
+        setConnectionError(null)
+
+        // Test database connection first
+        const connectionTest = await databaseService.testConnection()
+        if (!connectionTest.connected) {
+          setConnectionError(connectionTest.error)
+          setSystemStatus("offline")
         }
 
-        // Check system health with error handling
+        // Load officials with comprehensive error handling
         try {
-          const { healthy } = await databaseService.healthCheck()
-          setSystemStatus(healthy ? "online" : "offline")
-        } catch (error) {
-          console.warn("Could not check system health:", error)
-          setSystemStatus("maintenance")
+          const { data: officialsData, error } = await officialsService.getAllOfficials()
+          if (error) {
+            console.warn("Officials service returned error:", error)
+          }
+          if (officialsData && officialsData.length > 0) {
+            setOfficials(officialsData)
+          }
+        } catch (error: any) {
+          console.warn("Failed to load officials:", error.message)
+          setConnectionError(`Officials loading failed: ${error.message}`)
         }
 
-      } catch (error) {
-        console.error("Error loading page data:", error)
+        // Check system health
+        try {
+          const { healthy, error } = await databaseService.healthCheck()
+          if (healthy) {
+            setSystemStatus("online")
+          } else {
+            setSystemStatus("maintenance")
+            if (error) {
+              setConnectionError(error)
+            }
+          }
+        } catch (error: any) {
+          console.warn("Health check failed:", error.message)
+          setSystemStatus("offline")
+          setConnectionError(`Health check failed: ${error.message}`)
+        }
+      } catch (error: any) {
+        console.error("Critical error loading page data:", error)
         setSystemStatus("offline")
+        setConnectionError(`System error: ${error.message}`)
       } finally {
         setDataLoading(false)
       }
@@ -157,6 +161,23 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* System Status Banner - Show if there are connection issues */}
+      {connectionError && (
+        <div className="bg-yellow-500 text-white px-4 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-4 w-4" />
+              <span className="font-medium">System Notice:</span>
+              <span className="text-sm">Some features may be limited due to connectivity issues.</span>
+            </div>
+            <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus)}`}>
+              {getStatusIcon(systemStatus)}
+              <span className="text-sm capitalize">{systemStatus}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Health Advisory Banner */}
       <div className="bg-blue-500 text-white px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -171,7 +192,7 @@ export default function HomePage() {
             </span>
           </div>
           <div className="text-blue-200 text-sm">
-            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
       </div>
@@ -233,23 +254,38 @@ export default function HomePage() {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
-              <Link href="/" className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-semibold border-b-2 border-blue-600">
+              <Link
+                href="/"
+                className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-semibold border-b-2 border-blue-600"
+              >
                 <Home className="h-4 w-4 inline mr-1" />
                 Home
               </Link>
-              <Link href="#about" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+              <Link
+                href="#about"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center"
+              >
                 About
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Link>
-              <Link href="#officials" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+              <Link
+                href="#officials"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center"
+              >
                 Officials
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Link>
-              <Link href="/portal" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+              <Link
+                href="/portal"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center"
+              >
                 Services
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Link>
-              <Link href="/portal/bulletin" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center">
+              <Link
+                href="/portal/bulletin"
+                className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium flex items-center"
+              >
                 Programs
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Link>
@@ -279,16 +315,28 @@ export default function HomePage() {
                 <Link href="#about" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
                   About
                 </Link>
-                <Link href="#officials" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+                <Link
+                  href="#officials"
+                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                >
                   Officials
                 </Link>
-                <Link href="/portal" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+                <Link
+                  href="/portal"
+                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                >
                   Services
                 </Link>
-                <Link href="/portal/bulletin" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+                <Link
+                  href="/portal/bulletin"
+                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                >
                   News
                 </Link>
-                <Link href="#contact" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+                <Link
+                  href="#contact"
+                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                >
                   Contact
                 </Link>
               </div>
@@ -305,16 +353,16 @@ export default function HomePage() {
               🏛️ Official Government Website
             </Badge>
           </div>
-          
+
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Welcome to
             <br />
             <span className="text-yellow-300">Barangay Bucana</span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Your trusted local government unit committed to serving the community with 
-            transparency, efficiency, and dedication.
+            Your trusted local government unit committed to serving the community with transparency, efficiency, and
+            dedication.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -325,7 +373,11 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/emergency">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4 border-2 border-white text-white hover:bg-white hover:text-blue-700 font-semibold">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-4 border-2 border-white text-white hover:bg-white hover:text-blue-700 font-semibold bg-transparent"
+              >
                 <PhoneCall className="mr-2 h-5 w-5" />
                 Emergency Hotline
               </Button>
@@ -343,7 +395,7 @@ export default function HomePage() {
               Learn more about our barangay's profile, demographics, and key information.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {barangayStats.map((stat, index) => (
               <Card key={index} className="text-center hover:shadow-lg transition-shadow bg-white border-0 shadow-md">
@@ -366,10 +418,11 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Services</h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Access comprehensive digital services designed to make your barangay transactions easier and more efficient.
+              Access comprehensive digital services designed to make your barangay transactions easier and more
+              efficient.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="hover:shadow-lg transition-shadow group cursor-pointer">
               <CardHeader className="text-center">
@@ -476,8 +529,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Live Statistics - Only show if not loading */}
-      {!dataLoading && (
+      {/* Live Statistics - Only show if system is online and not loading */}
+      {systemStatus === "online" && !dataLoading && (
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
@@ -497,86 +550,110 @@ export default function HomePage() {
             <p className="text-lg text-gray-600">
               Dedicated leaders serving the community with integrity and excellence
             </p>
+            {dataLoading && <p className="text-sm text-gray-500 mt-2">Loading officials information...</p>}
           </div>
 
-          {/* Barangay Captain - Featured */}
-          {officials
-            .filter((o) => o.position.includes("Captain"))
-            .map((captain) => (
-              <div key={captain.id} className="mb-16">
-                <Card className="overflow-hidden">
-                  <CardContent className="p-8">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
-                      <div className="relative">
-                        <img
-                          src={captain.image_url || "/placeholder.svg?height=120&width=120"}
-                          alt={captain.name}
-                          className="w-32 h-32 rounded-full border-4 border-blue-600 shadow-lg"
-                        />
-                        <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full">
-                          <Crown className="h-6 w-6" />
+          {/* Show loading state */}
+          {dataLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-3 w-2/3 mx-auto"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* Barangay Captain - Featured */}
+              {officials
+                .filter((o) => o.position.includes("Captain"))
+                .map((captain) => (
+                  <div key={captain.id} className="mb-16">
+                    <Card className="overflow-hidden">
+                      <CardContent className="p-8">
+                        <div className="flex flex-col md:flex-row items-center gap-8">
+                          <div className="relative">
+                            <img
+                              src={captain.image_url || "/placeholder.svg?height=120&width=120"}
+                              alt={captain.name}
+                              className="w-32 h-32 rounded-full border-4 border-blue-600 shadow-lg"
+                            />
+                            <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full">
+                              <Crown className="h-6 w-6" />
+                            </div>
+                          </div>
+                          <div className="flex-1 text-center md:text-left">
+                            <h3 className="text-3xl font-bold text-gray-900 mb-2">{captain.name}</h3>
+                            <Badge className="bg-blue-600 text-white mb-4 text-sm">{captain.position}</Badge>
+                            <p className="text-gray-600 mb-6 text-lg leading-relaxed">{captain.description}</p>
+                            <div className="flex flex-wrap gap-2 mb-6 justify-center md:justify-start">
+                              {captain.achievements?.map((achievement, index) => (
+                                <Badge key={index} variant="outline" className="border-blue-200 text-blue-700">
+                                  <Award className="h-3 w-3 mr-1" />
+                                  {achievement}
+                                </Badge>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-4 justify-center md:justify-start text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                <span>{captain.contact_email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                <span>{captain.contact_phone}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1 text-center md:text-left">
-                        <h3 className="text-3xl font-bold text-gray-900 mb-2">{captain.name}</h3>
-                        <Badge className="bg-blue-600 text-white mb-4 text-sm">{captain.position}</Badge>
-                        <p className="text-gray-600 mb-6 text-lg leading-relaxed">{captain.description}</p>
-                        <div className="flex flex-wrap gap-2 mb-6 justify-center md:justify-start">
-                          {captain.achievements?.map((achievement, index) => (
-                            <Badge key={index} variant="outline" className="border-blue-200 text-blue-700">
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+
+              {/* Other Officials Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {officials
+                  .filter((o) => !o.position.includes("Captain"))
+                  .map((official, index) => (
+                    <Card key={official.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent className="p-6 text-center">
+                        <img
+                          src={official.image_url || "/placeholder.svg?height=80&width=80"}
+                          alt={official.name}
+                          className="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-gray-200"
+                        />
+                        <h4 className="font-bold text-lg mb-2 text-gray-900">{official.name}</h4>
+                        <Badge className="bg-gray-100 text-gray-700 mb-3 text-xs">{official.position}</Badge>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">{official.description}</p>
+                        <div className="space-y-2 mb-4">
+                          {official.achievements?.map((achievement, achIndex) => (
+                            <Badge
+                              key={achIndex}
+                              variant="outline"
+                              className="border-gray-200 text-gray-600 text-xs block"
+                            >
                               <Award className="h-3 w-3 mr-1" />
                               {achievement}
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex items-center gap-4 justify-center md:justify-start text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            <span>{captain.contact_email}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4" />
-                            <span>{captain.contact_phone}</span>
-                          </div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                          <Mail className="h-3 w-3" />
+                          <span className="truncate">{official.contact_email}</span>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
               </div>
-            ))}
-
-          {/* Other Officials Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {officials
-              .filter((o) => !o.position.includes("Captain"))
-              .map((official, index) => (
-                <Card key={official.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6 text-center">
-                    <img
-                      src={official.image_url || "/placeholder.svg?height=80&width=80"}
-                      alt={official.name}
-                      className="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-gray-200"
-                    />
-                    <h4 className="font-bold text-lg mb-2 text-gray-900">{official.name}</h4>
-                    <Badge className="bg-gray-100 text-gray-700 mb-3 text-xs">{official.position}</Badge>
-                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">{official.description}</p>
-                    <div className="space-y-2 mb-4">
-                      {official.achievements?.map((achievement, achIndex) => (
-                        <Badge key={achIndex} variant="outline" className="border-gray-200 text-gray-600 text-xs block">
-                          <Award className="h-3 w-3 mr-1" />
-                          {achievement}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                      <Mail className="h-3 w-3" />
-                      <span>{official.contact_email}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
+            </>
+          )}
 
           {/* Contact All Officials */}
           <div className="text-center mt-12">
@@ -590,8 +667,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* News & Announcements - Only show if not loading */}
-      {!dataLoading && (
+      {/* News & Announcements - Only show if system is online and not loading */}
+      {systemStatus === "online" && !dataLoading && (
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <NewsFeed limit={6} />
