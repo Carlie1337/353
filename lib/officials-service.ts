@@ -1,5 +1,3 @@
-import { supabase } from "./supabase-client"
-
 export interface BarangayOfficial {
   id: string
   name: string
@@ -8,174 +6,105 @@ export interface BarangayOfficial {
   email?: string
   photo_url?: string
   status: "active" | "inactive"
-  term_start?: string
+  term_start: string
   term_end?: string
-  created_at: string
-  updated_at: string
+  department?: string
 }
 
 class OfficialsService {
   private fallbackOfficials: BarangayOfficial[] = [
     {
       id: "1",
-      name: "Hon. Maria Santos",
+      name: "Maria Santos",
       position: "Barangay Captain",
-      contact_number: "+63 912 345 6789",
-      email: "captain@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=120&width=120",
+      contact_number: "+63 917 123 4567",
+      email: "captain@barangaybucana.gov.ph",
+      photo_url: "/placeholder-user.jpg",
       status: "active",
       term_start: "2023-01-01",
-      term_end: "2025-12-31",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      term_end: "2026-01-01",
+      department: "Executive",
     },
     {
       id: "2",
-      name: "Hon. Juan Dela Cruz",
-      position: "Barangay Kagawad",
-      contact_number: "+63 912 345 6790",
-      email: "kagawad1@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=120&width=120",
+      name: "Juan Cruz",
+      position: "Barangay Secretary",
+      contact_number: "+63 917 234 5678",
+      email: "secretary@barangaybucana.gov.ph",
+      photo_url: "/placeholder-user.jpg",
       status: "active",
       term_start: "2023-01-01",
-      term_end: "2025-12-31",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      department: "Administration",
     },
     {
       id: "3",
-      name: "Hon. Ana Reyes",
-      position: "Barangay Kagawad",
-      contact_number: "+63 912 345 6791",
-      email: "kagawad2@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=120&width=120",
+      name: "Ana Rodriguez",
+      position: "Barangay Treasurer",
+      contact_number: "+63 917 345 6789",
+      email: "treasurer@barangaybucana.gov.ph",
+      photo_url: "/placeholder-user.jpg",
       status: "active",
       term_start: "2023-01-01",
-      term_end: "2025-12-31",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      department: "Finance",
     },
     {
       id: "4",
-      name: "Pedro Martinez",
-      position: "Barangay Secretary",
-      contact_number: "+63 912 345 6792",
-      email: "secretary@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=120&width=120",
+      name: "Pedro Gonzales",
+      position: "Kagawad - Health",
+      contact_number: "+63 917 456 7890",
+      email: "health.kagawad@barangaybucana.gov.ph",
+      photo_url: "/placeholder-user.jpg",
       status: "active",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      term_start: "2023-01-01",
+      department: "Health",
     },
     {
       id: "5",
-      name: "Rosa Garcia",
-      position: "Barangay Treasurer",
-      contact_number: "+63 912 345 6793",
-      email: "treasurer@barangay.gov.ph",
-      photo_url: "/placeholder.svg?height=120&width=120",
+      name: "Rosa Martinez",
+      position: "Kagawad - Education",
+      contact_number: "+63 917 567 8901",
+      email: "education.kagawad@barangaybucana.gov.ph",
+      photo_url: "/placeholder-user.jpg",
       status: "active",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      term_start: "2023-01-01",
+      department: "Education",
     },
   ]
 
   async getAllOfficials(): Promise<BarangayOfficial[]> {
     try {
-      const { data, error } = await supabase
-        .from("barangay_officials")
-        .select("*")
-        .eq("status", "active")
-        .order("position", { ascending: true })
-
-      if (error) {
-        console.warn("Database error, using fallback officials:", error.message)
-        return this.fallbackOfficials
-      }
-
-      return data && data.length > 0 ? data : this.fallbackOfficials
-    } catch (error: any) {
-      console.warn("Error fetching officials, using fallback data:", error.message)
+      // In a real implementation, this would fetch from Supabase
+      // For now, return fallback data
+      return this.fallbackOfficials
+    } catch (error) {
+      console.error("Error fetching officials:", error)
       return this.fallbackOfficials
     }
   }
 
   async getOfficialById(id: string): Promise<BarangayOfficial | null> {
     try {
-      const { data, error } = await supabase.from("barangay_officials").select("*").eq("id", id).single()
-
-      if (error) {
-        const fallback = this.fallbackOfficials.find((o) => o.id === id)
-        return fallback || null
-      }
-
-      return data
+      const officials = await this.getAllOfficials()
+      return officials.find((official) => official.id === id) || null
     } catch (error) {
-      const fallback = this.fallbackOfficials.find((o) => o.id === id)
-      return fallback || null
-    }
-  }
-
-  async createOfficial(
-    official: Omit<BarangayOfficial, "id" | "created_at" | "updated_at">,
-  ): Promise<BarangayOfficial | null> {
-    try {
-      const { data, error } = await supabase
-        .from("barangay_officials")
-        .insert([
-          {
-            ...official,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return data
-    } catch (error: any) {
-      console.error("Error creating official:", error.message)
+      console.error("Error fetching official:", error)
       return null
     }
   }
 
-  async updateOfficial(id: string, updates: Partial<BarangayOfficial>): Promise<BarangayOfficial | null> {
+  async getOfficialsByDepartment(department: string): Promise<BarangayOfficial[]> {
     try {
-      const { data, error } = await supabase
-        .from("barangay_officials")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return data
-    } catch (error: any) {
-      console.error("Error updating official:", error.message)
-      return null
-    }
-  }
-
-  async deleteOfficial(id: string): Promise<boolean> {
-    try {
-      const { error } = await supabase.from("barangay_officials").delete().eq("id", id)
-
-      return !error
-    } catch (error: any) {
-      console.error("Error deleting official:", error.message)
-      return false
+      const officials = await this.getAllOfficials()
+      return officials.filter((official) => official.department === department)
+    } catch (error) {
+      console.error("Error fetching officials by department:", error)
+      return []
     }
   }
 
   getFallbackOfficials(): BarangayOfficial[] {
-    return this.fallbackOfficials
+    return [...this.fallbackOfficials]
   }
 }
 
 export const officialsService = new OfficialsService()
-export default officialsService
