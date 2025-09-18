@@ -7,88 +7,97 @@ export interface BarangayOfficial {
   contact_number?: string
   email?: string
   photo_url?: string
-  term_start: string
-  term_end: string
   status: "active" | "inactive"
+  term_start?: string
+  term_end?: string
   created_at: string
+  updated_at: string
 }
 
-// Fallback data for when database is unavailable
-const FALLBACK_OFFICIALS: BarangayOfficial[] = [
-  {
-    id: "1",
-    name: "Hon. Maria Elena Santos",
-    position: "Barangay Captain",
-    contact_number: "+63 917 123 4567",
-    email: "captain@barangay.gov.ph",
-    photo_url: "/placeholder-user.jpg",
-    term_start: "2023-01-01",
-    term_end: "2025-12-31",
-    status: "active",
-    created_at: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Hon. Roberto Cruz",
-    position: "Barangay Kagawad",
-    contact_number: "+63 917 234 5678",
-    email: "kagawad1@barangay.gov.ph",
-    photo_url: "/placeholder-user.jpg",
-    term_start: "2023-01-01",
-    term_end: "2025-12-31",
-    status: "active",
-    created_at: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Hon. Ana Reyes",
-    position: "Barangay Kagawad",
-    contact_number: "+63 917 345 6789",
-    email: "kagawad2@barangay.gov.ph",
-    photo_url: "/placeholder-user.jpg",
-    term_start: "2023-01-01",
-    term_end: "2025-12-31",
-    status: "active",
-    created_at: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Hon. Jose Martinez",
-    position: "Barangay Secretary",
-    contact_number: "+63 917 456 7890",
-    email: "secretary@barangay.gov.ph",
-    photo_url: "/placeholder-user.jpg",
-    term_start: "2023-01-01",
-    term_end: "2025-12-31",
-    status: "active",
-    created_at: "2023-01-01T00:00:00Z",
-  },
-  {
-    id: "5",
-    name: "Hon. Carmen Lopez",
-    position: "Barangay Treasurer",
-    contact_number: "+63 917 567 8901",
-    email: "treasurer@barangay.gov.ph",
-    photo_url: "/placeholder-user.jpg",
-    term_start: "2023-01-01",
-    term_end: "2025-12-31",
-    status: "active",
-    created_at: "2023-01-01T00:00:00Z",
-  },
-]
-
 class OfficialsService {
+  private fallbackOfficials: BarangayOfficial[] = [
+    {
+      id: "1",
+      name: "Hon. Maria Santos",
+      position: "Barangay Captain",
+      contact_number: "(082) 123-4567",
+      email: "captain@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=120&width=120",
+      status: "active",
+      term_start: "2023-01-01",
+      term_end: "2025-12-31",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      name: "Hon. Juan Dela Cruz",
+      position: "Barangay Kagawad - Committee on Peace and Order",
+      contact_number: "(082) 123-4568",
+      email: "kagawad1@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=80&width=80",
+      status: "active",
+      term_start: "2023-01-01",
+      term_end: "2025-12-31",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "3",
+      name: "Hon. Ana Reyes",
+      position: "Barangay Kagawad - Committee on Health",
+      contact_number: "(082) 123-4569",
+      email: "kagawad2@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=80&width=80",
+      status: "active",
+      term_start: "2023-01-01",
+      term_end: "2025-12-31",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "4",
+      name: "Hon. Pedro Garcia",
+      position: "Barangay Kagawad - Committee on Infrastructure",
+      contact_number: "(082) 123-4570",
+      email: "kagawad3@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=80&width=80",
+      status: "active",
+      term_start: "2023-01-01",
+      term_end: "2025-12-31",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "5",
+      name: "Hon. Rosa Martinez",
+      position: "Barangay Secretary",
+      contact_number: "(082) 123-4571",
+      email: "secretary@barangay.gov.ph",
+      photo_url: "/placeholder.svg?height=80&width=80",
+      status: "active",
+      term_start: "2023-01-01",
+      term_end: "2025-12-31",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]
+
   async getAllOfficials(): Promise<BarangayOfficial[]> {
     try {
-      // Test database connection first
-      const { error: connectionError } = await supabase.from("barangay_officials").select("count").limit(1).single()
+      // Test connection first
+      const { data: testData, error: testError } = await supabase
+        .from("barangay_officials")
+        .select("count")
+        .limit(1)
+        .single()
 
-      if (connectionError) {
-        console.warn("Database connection failed, using fallback data:", connectionError.message)
-        return FALLBACK_OFFICIALS
+      if (testError) {
+        console.warn("Database connection failed, using fallback data:", testError.message)
+        return this.fallbackOfficials
       }
 
-      // Fetch real data from database
+      // Fetch real data
       const { data, error } = await supabase
         .from("barangay_officials")
         .select("*")
@@ -96,16 +105,15 @@ class OfficialsService {
         .order("position", { ascending: true })
 
       if (error) {
-        console.warn("Error fetching officials from database, using fallback data:", error.message)
-        return FALLBACK_OFFICIALS
+        console.warn("Error fetching officials from database:", error.message)
+        return this.fallbackOfficials
       }
 
-      // Return database data if available, otherwise fallback
-      return data && data.length > 0 ? data : FALLBACK_OFFICIALS
-    } catch (error) {
-      console.error("Error in getAllOfficials:", error)
-      // Always return fallback data on any error
-      return FALLBACK_OFFICIALS
+      // Return real data if available, otherwise fallback
+      return data && data.length > 0 ? data : this.fallbackOfficials
+    } catch (error: any) {
+      console.warn("Officials service error:", error.message)
+      return this.fallbackOfficials
     }
   }
 
@@ -114,53 +122,92 @@ class OfficialsService {
       const { data, error } = await supabase.from("barangay_officials").select("*").eq("id", id).single()
 
       if (error) {
-        // Try to find in fallback data
-        return FALLBACK_OFFICIALS.find((official) => official.id === id) || null
+        // Try fallback data
+        const fallbackOfficial = this.fallbackOfficials.find((official) => official.id === id)
+        return fallbackOfficial || null
       }
 
       return data
-    } catch (error) {
-      console.error("Error fetching official by ID:", error)
-      return FALLBACK_OFFICIALS.find((official) => official.id === id) || null
+    } catch (error: any) {
+      console.warn("Error fetching official by ID:", error.message)
+      const fallbackOfficial = this.fallbackOfficials.find((official) => official.id === id)
+      return fallbackOfficial || null
     }
   }
 
-  async createOfficial(official: Omit<BarangayOfficial, "id" | "created_at">): Promise<BarangayOfficial | null> {
+  async createOfficial(officialData: Omit<BarangayOfficial, "id" | "created_at" | "updated_at">): Promise<{
+    data: BarangayOfficial | null
+    error: string | null
+  }> {
     try {
-      const { data, error } = await supabase.from("barangay_officials").insert(official).select().single()
+      const { data, error } = await supabase
+        .from("barangay_officials")
+        .insert([
+          {
+            ...officialData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single()
 
-      if (error) throw error
+      if (error) {
+        return { data: null, error: error.message }
+      }
 
-      return data
-    } catch (error) {
-      console.error("Error creating official:", error)
-      return null
+      return { data, error: null }
+    } catch (error: any) {
+      return { data: null, error: error.message }
     }
   }
 
-  async updateOfficial(id: string, updates: Partial<BarangayOfficial>): Promise<BarangayOfficial | null> {
+  async updateOfficial(
+    id: string,
+    updates: Partial<Omit<BarangayOfficial, "id" | "created_at">>,
+  ): Promise<{
+    data: BarangayOfficial | null
+    error: string | null
+  }> {
     try {
-      const { data, error } = await supabase.from("barangay_officials").update(updates).eq("id", id).select().single()
+      const { data, error } = await supabase
+        .from("barangay_officials")
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single()
 
-      if (error) throw error
+      if (error) {
+        return { data: null, error: error.message }
+      }
 
-      return data
-    } catch (error) {
-      console.error("Error updating official:", error)
-      return null
+      return { data, error: null }
+    } catch (error: any) {
+      return { data: null, error: error.message }
     }
   }
 
-  async deleteOfficial(id: string): Promise<boolean> {
+  async deleteOfficial(id: string): Promise<{ error: string | null }> {
     try {
       const { error } = await supabase.from("barangay_officials").delete().eq("id", id)
 
-      return !error
-    } catch (error) {
-      console.error("Error deleting official:", error)
-      return false
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    } catch (error: any) {
+      return { error: error.message }
     }
+  }
+
+  getFallbackOfficials(): BarangayOfficial[] {
+    return this.fallbackOfficials
   }
 }
 
 export const officialsService = new OfficialsService()
+export default officialsService
